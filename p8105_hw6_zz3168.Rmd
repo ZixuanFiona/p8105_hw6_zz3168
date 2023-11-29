@@ -26,9 +26,35 @@ weather_df =
   select(name, id, everything())
 ```
 
-# Identify the 2.5% and 97.5% quantiles 
+do the r regression
+
 ```{r}
-boost_sample = 
+boost_sample_r = 
+  weather_df |> 
+  bootstrap(n = 5000) |> 
+  mutate(
+    models = map(strap, ~lm(tmax ~ tmin, data = .x)),
+    results = map(models, broom::glance)
+  ) |> 
+  select(-strap, -models) |> 
+  unnest(results) |> 
+  janitor::clean_names()
+
+conf_r =
+  boost_sample_r |> 
+  summarize(
+    c_lower = quantile(r_squared, 0.025),
+    c_upper = quantile(r_squared, 0.975)
+  ) |> 
+    knitr::kable()
+  
+  
+
+```
+
+#Identify the 2.5% and 97.5% quantiles 
+```{r}
+boost_sample_b = 
   weather_df |> 
   bootstrap(n = 5000) |> 
   mutate(
@@ -43,15 +69,44 @@ boost_sample =
   ) |> 
   janitor::clean_names() |> 
   mutate(
-    log_b= log(estimate_intercept * estimate_tmin)
-  ) |> 
+    log_b = log(estimate_intercept * estimate_tmin)
+  )
+
+
+conf_beta = 
+  boost_sample_b |> 
   summarize(
-    lower_limit = quantile(log_b, 0.025),
-    upper_limit = quantile(log_b, 0.975)
+    c_lower = quantile(log_b, 0.025),
+    c_upper = quantile(log_b, 0.975)
   ) |> 
  knitr::kable() 
   
-
   
 ```
 
+# do the r plot
+
+```{r}
+boost_sample_r |> 
+  ggplot(aes(x = r_squared)) +
+  geom_density()+
+  labs(
+    title = "Estimated R-Squared's Distribution ",
+    x = "Estimated R Squared",
+    y = "Density"
+  )
+
+```
+
+#do the plot for Beta
+```{r}
+boost_sample_b |> 
+  ggplot(aes(x = log_b)) + 
+  geom_density() + 
+  labs(
+    title = "Estimated Beta Distribution",
+    x = "Estimated Beta",
+    y = "Density"
+  )
+```
+ 
