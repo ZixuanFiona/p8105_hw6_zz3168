@@ -5,26 +5,53 @@ date: "2023-11-28"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r}
+library(tidyverse)
+library(modelr)
 ```
 
-## R Markdown
+### Problem 2
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r}
+weather_df = 
+  rnoaa::meteo_pull_monitors(
+    c("USW00094728"),
+    var = c("PRCP", "TMIN", "TMAX"), 
+    date_min = "2022-01-01",
+    date_max = "2022-12-31") |>
+  mutate(
+    name = recode(id, USW00094728 = "CentralPark_NY"),
+    tmin = tmin / 10,
+    tmax = tmax / 10) |>
+  select(name, id, everything())
 ```
 
-## Including Plots
+# Identify the 2.5% and 97.5% quantiles 
+```{r}
+boost_sample = 
+  weather_df |> 
+  bootstrap(n = 5000) |> 
+  mutate(
+    models = map(strap, ~lm(tmax ~ tmin, data = .x)),
+    results = map(models, broom::tidy)
+  ) |> 
+  select(-strap, -models) |> 
+  unnest(results) |> 
+  pivot_wider(
+    names_from = term,
+    values_from = c(estimate, std.error, statistic, p.value)
+  ) |> 
+  janitor::clean_names() |> 
+  mutate(
+    log_b= log(estimate_intercept * estimate_tmin)
+  ) |> 
+  summarize(
+    lower_limit = quantile(log_b, 0.025),
+    upper_limit = quantile(log_b, 0.975)
+  ) |> 
+ knitr::kable() 
+  
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+  
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
