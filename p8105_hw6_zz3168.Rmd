@@ -106,12 +106,31 @@ boost_sample_r |>
 #do the plot for Beta
 ```{r}
 boost_sample_b |> 
+  select(log_b2) |> 
   ggplot(aes(x = log_b2)) + 
   geom_density() + 
   labs(
     title = "Estimated Beta Distribution",
-    x = "Estimated Beta01 * Beta02",
+    x = "Estimated Beta1 * Beta2",
     y = "Density"
   )
+
 ```
  
+ 
+### Problem 3
+
+##clean and tidy the data
+```{r}
+birthwt_df = 
+  read_csv("./data/birthweight.csv") |> 
+  mutate(
+    babysex = as.factor(babysex),
+    frace = as.factor(frace),
+    mrace = as.factor(mrace),
+    malform = as.factor(malform)
+  ) |> 
+  janitor::clean_names()
+  
+```
+
