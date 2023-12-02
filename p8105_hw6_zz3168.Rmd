@@ -191,7 +191,7 @@ conf_beta1 =
   
 ```
 
-According to the result, The 2.5% and 97.5% quantiles of of log(beta 1*beta 2) is -8.86 and -4.60. The 2.5% and 97.5% quantiles of R squard is 0.89 and 0.94. 
+According to the result, The 2.5% and 97.5% quantiles of of log(beta 1*beta 2) is -8.88 and -4.60. The 2.5% and 97.5% quantiles of R squard is 0.89 and 0.94. 
 
 # do the r plot
 
@@ -304,4 +304,4 @@ cv_df |>
   ggplot(aes(x = model, y = rmse)) + 
   geom_violin()
 ```
-According to the plot we could saw that the model 2 has the highest values of rmse, and the model 1 have the lowest rmse.
+According to the plot we could saw that the model 2 has the highest values of rmse, and the my model have the lowest rmse.
