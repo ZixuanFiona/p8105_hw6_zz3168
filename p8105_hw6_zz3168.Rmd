@@ -172,7 +172,7 @@ model_fit =
   lm(bwt ~ babysex + bhead + blength + mrace + smoken, data = birthwt_df) 
 
 ```
-
+My model is based on factors that underlie birth weight. and consider the baby’s head circumference at birth,  baby’s length at birth, and mother’s race will influence the babay's birth weight, so i use these data for delivery in years and average number of cigarettes smoked per day during pregnancy for predictors.
 
 ##plot of Model Residuals
 ```{r}
@@ -193,7 +193,7 @@ model_2 =
   broom::tidy()
 
 model_3 = 
-  lm(bwt ~ bhead + blength + babysex + bhead* blength* babysex, data = birthwt_df) |> 
+  lm(bwt ~ bhead* babysex + blength* babysex + bhead* blength* babysex, data = birthwt_df) |> 
    broom::tidy()
 
 ```
@@ -207,8 +207,8 @@ cv_df =
     test = map(test, as_tibble)) |> 
   mutate(
     model_1 = map(train, \(df) lm(bwt ~ babysex + bhead + blength + mrace + smoken, data = birthwt_df)),
-    model_2 = map(train, \(df) lm(bwt ~ blength + gaweeks, data = df)),
-    model_3 = map(train, \(df) lm(bwt ~ bhead + blength + babysex + bhead*blength*babysex, data = df))
+    model_2 = map(train, \(df) lm(bwt ~ blength + gaweeks, data = birthwt_df)),
+    model_3 = map(train, \(df) lm(bwt ~ bhead* babysex + blength* babysex + bhead* blength* babysex, data = birthwt_df))
   ) |> 
    mutate(
     rmse_1 = map2_dbl(model_1, test, \(mod, df) rmse(model = mod, data = df)),
@@ -229,4 +229,4 @@ cv_df |>
   ggplot(aes(x = model, y = rmse)) + 
   geom_violin()
 ```
-
+According to the plot we could saw that the model 2 has the highest values of rmse, and the model 1 have the lowest rmse.
