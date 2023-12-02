@@ -8,6 +8,25 @@ output: github_document
 ```{r}
 library(tidyverse)
 library(modelr)
+library(mgcv)
+
+set.seed(1)
+
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.asp = .6,
+  out.width = "90%"
+)
+
+theme_set(theme_minimal())
+
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+
+scale_colour_discrete = scale_colour_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
 ```
 
 ### Problem 2
@@ -147,7 +166,67 @@ birthwt_df =
   
 ```
 
+##build a regression model for birthweight.
 ```{r}
+model_fit =
+  lm(bwt ~ babysex + bhead + blength + mrace + smoken, data = birthwt_df) 
 
+```
+
+
+##plot of Model Residuals
+```{r}
+plot_df = 
+birthwt_df |> 
+  select(bwt, babysex, bhead, blength, mrace, smoken) |> 
+  add_residuals(model_fit) |> 
+  add_predictions(model_fit) |> 
+  ggplot(aes(x = pred, y = resid)) +
+  geom_violin() 
+  
+```
+
+## the other model 
+```{r}
+model_2 = 
+  lm(bwt ~ blength + gaweeks, data = birthwt_df) |> 
+  broom::tidy()
+
+model_3 = 
+  lm(bwt ~ bhead + blength + babysex + bhead* blength* babysex, data = birthwt_df) |> 
+   broom::tidy()
+
+```
+
+##compare the model
+```{r}
+cv_df = 
+  crossv_mc(birthwt_df, 100) |>
+  mutate(
+    train = map(train, as_tibble),
+    test = map(test, as_tibble)) |> 
+  mutate(
+    model_1 = map(train, \(df) lm(bwt ~ babysex + bhead + blength + mrace + smoken, data = birthwt_df)),
+    model_2 = map(train, \(df) lm(bwt ~ blength + gaweeks, data = df)),
+    model_3 = map(train, \(df) lm(bwt ~ bhead + blength + babysex + bhead*blength*babysex, data = df))
+  ) |> 
+   mutate(
+    rmse_1 = map2_dbl(model_1, test, \(mod, df) rmse(model = mod, data = df)),
+    rmse_2 = map2_dbl(model_2, test, \(mod, df) rmse(model = mod, data = df)),
+    rmse_3 = map2_dbl(model_3, test, \(mod, df) rmse(model = mod, data = df)))
+```
+
+
+```{r}
+cv_df |> 
+  select(starts_with("rmse")) |> 
+  pivot_longer(
+    everything(),
+    names_to = "model", 
+    values_to = "rmse",
+    names_prefix = "rmse_") |> 
+  mutate(model = fct_inorder(model)) |> 
+  ggplot(aes(x = model, y = rmse)) + 
+  geom_violin()
 ```
 
