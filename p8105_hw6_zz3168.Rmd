@@ -52,6 +52,7 @@ conf_r =
 
 ```
 
+
 #Identify the 2.5% and 97.5% quantiles 
 ```{r}
 boost_sample_b = 
@@ -62,19 +63,21 @@ boost_sample_b =
     results = map(models, broom::tidy)
   ) |> 
   select(-strap, -models) |> 
-  unnest(results) |> 
+  unnest(results) |>
+  select(id = `.id`, term, estimate) |> 
   pivot_wider(
     names_from = term,
-    values_from = c(estimate, std.error, statistic, p.value)
+    values_from = estimate
   ) |> 
   janitor::clean_names() |> 
+  rename(beta0 = intercept, beta1 = tmin, beta2 = prcp) |> 
   mutate(
-    log_b1 = log(estimate_intercept * estimate_tmin),
-    log_b2 = log(estimate_tmin * estimate_prcp )
+    log_b1 = log(beta0 * beta1),
+    log_b2 = log(beta1 * beta2)
   )
 
 
-conf_beta = 
+conf_beta0 = 
   boost_sample_b |> 
   summarize(
     c_lower = quantile(log_b1, 0.025),
@@ -83,11 +86,19 @@ conf_beta =
  knitr::kable() 
 
 
-
+conf_beta1 = 
+  boost_sample_b |> 
+  summarize(
+    c_lower = quantile(log_b2, 0.025,na.rm = TRUE),
+    c_upper = quantile(log_b2, 0.975,na.rm = TRUE)
+  ) |> 
+ knitr::kable() 
 
   
   
 ```
+
+According to the result, The 2.5% and 97.5% quantiles of of log(beta 1*beta 2) is -8.86 and -4.60. The 2.5% and 97.5% quantiles of R squard is 0.89 and 0.94. 
 
 # do the r plot
 
@@ -116,7 +127,7 @@ boost_sample_b |>
   )
 
 ```
- 
+According to the plot , we could see that the plot for R suqard is approximately normal, and the plot for  log(beta 1*beta 2) is skewed to the left.
  
 ### Problem 3
 
@@ -131,6 +142,12 @@ birthwt_df =
     malform = as.factor(malform)
   ) |> 
   janitor::clean_names()
+
+
   
+```
+
+```{r}
+
 ```
 
